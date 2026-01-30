@@ -1,0 +1,225 @@
+---
+title: "network_metaanalysis"
+---
+
+```{r}
+# install.packages('pacman')
+library(pacman)
+
+pacman::p_load('BUGSnet', 'dplyr', 'tidyr', 'stringr')
+set.seed(12345)
+
+```
+
+```{r}
+
+# Download data from Google sheet and prepare for analysis
+data_prepared <- read.csv('https://docs.google.com/spreadsheets/d/14aXdaoIlexEhEPIVylDPF3HLr28ChyRIYGMEqWnDI0A/gviz/tq?tqx=out:csv&headers=1&sheet=Sheet1', header = TRUE) |> 
+  select(study, starts_with(c("group_code", "n_events", "n_patients"))) |>
+  pivot_longer(
+    cols = starts_with(c("group_code", "n_events", "n_patients")),
+    names_to = c(".value", "group_num"),
+    names_pattern = "(.*)_G(\\d+)$"
+  ) |>
+  # rename columns to use BUGSNet functions
+  rename(
+    Treatment = group_code,
+    r = n_events, #  number of events (deaths)
+    n = n_patients, # sampleSize
+    Study = study
+  ) |>
+  arrange(Study, group_num) |>
+  filter(Treatment != '') |> 
+  select(Study, Treatment, r, n)
+
+```
+
+```{r}
+
+network_data <- data.prep(
+  arm.data = data_prepared,
+  varname.t = "Treatment",  # название столбца с вмешательствами
+  varname.s = "Study"       # название столбца с исследованиями
+)
+
+net.plot(
+  network_data,
+  node.scale = 3, 
+  edge.scale=1.5
+)
+
+network_char <- net.tab(
+  data = network_data,
+  outcome = "r",          # число событий
+  N = "n",               # размер выборки
+  type.outcome = "binomial"  # бинарный исход (смерть/выживание)
+)
+
+# Посмотрим характеристики сети
+print(network_char$network)
+
+# Посмотрим характеристики вмешательств
+print(network_char$intervention)
+
+# Посмотрим характеристики сравнений
+print(network_char$comparison)
+
+
+
+```
+
+
+```{r}
+reference_treatment <- "ST"
+
+# # Случайные эффекты модель для RR
+nma_model_random <- nma.model(
+  data = network_data,
+  outcome = "r",
+  N = "n",
+  reference = reference_treatment,
+  family = "binomial",
+  link = "log",          # для Risk Ratio
+  effects = "random",
+)
+
+# Фиксированные эффекты модель (для сравнения)
+nma_model_fixed <- nma.model(
+  data = network_data,
+  outcome = "r",
+  N = "n",
+  reference = reference_treatment,
+  family = "binomial",
+  link = "log",
+  effects = "fixed"
+)
+
+# Запуск модели со случайными эффектами
+nma_results_random <- nma.run(
+  nma_model_random,
+  n.burnin = 5000,
+  n.iter = 20000
+)
+
+# Запуск модели с фиксированными эффектами
+nma_results_fixed <- nma.run(
+  nma_model_fixed,
+  n.burnin = 5000,
+  n.iter = 20000
+)
+
+```
+
+
+```{r}
+# png(
+#   filename = paste0("leverage_plots_comparison",version,".png"),
+#   width = 1000,      # ширина для двух графиков
+#   height = 600,      # высота
+#   res = 150,         # разрешение
+#   pointsize = 12     # размер шрифта
+# )
+
+par(mfrow = c(1, 2))
+
+# Leverage plot для модели с фиксированными эффектами
+fe_fit <- nma.fit(
+  nma_results_fixed,
+  main = "Fixed Effects Model"
+)
+
+# Leverage plot для модели со случайными эффектами
+re_fit <- nma.fit(
+  nma_results_random,
+  main = "Random Effects Model"
+)
+# dev.off()
+par(mfrow = c(1, 1)) 
+
+
+```
+
+```{r}
+
+
+# Forest plot для сравнения всех методов с референтным
+# png(
+#   filename = paste0("forest_plot_random_",version,".png"),   # имя файла
+#   width = 600,                   # ширина в пикселях
+#   height = 800,                   # высота в пикселях
+#   res = 150,                      # разрешение (DPI)
+#   pointsize = 12                  # размер шрифта
+# )
+
+nma.forest(
+  nma_results_random,    # используем результаты модели со случайными эффектами
+  central.tdcy = "median",  # используем медиану как точечную оценку
+  comparator = reference_treatment,  # сравниваем с референтным лечением
+  log.scale = TRUE      # TRUE для логарифмической шкалы (обычно для RR)
+)
+# dev.off()
+
+```
+
+```{r}
+# Forest plot для сравнения всех методов с референтным
+# png(
+#   filename = paste0("forest_plot_fixed_",version,".png"),   # имя файла
+#   width = 600,                   # ширина в пикселях
+#   height = 800,                   # высота в пикселях
+#   res = 150,                      # разрешение (DPI)
+#   pointsize = 12                  # размер шрифта
+# )
+
+nma.forest(
+  nma_results_fixed,    # используем результаты модели со случайными эффектами
+  central.tdcy = "median",  # используем медиану как точечную оценку
+  comparator = reference_treatment,  # сравниваем с референтным лечением
+  log.scale = FALSE      # TRUE для логарифмической шкалы (обычно для RR)
+)
+
+# dev.off()
+
+
+```
+```{r}
+league.out <- nma.league(
+  nma_results_random,  
+  central.tdcy = "median",
+  log.scale = FALSE,          # FALSE для RR на натуральной шкале
+  low.colour = "springgreen4", # цвет для низких значений (лучшие)
+  mid.colour = "white",        # цвет для средних значений
+  high.colour = "red",         # цвет для высоких значений (худшие)
+  digits = 2                   # число знаков после запятой
+)
+league.out$heatplot
+
+# ggsave(paste0("league_table_heatmap_random",version,".png"), 
+#        plot = league.out$heatplot,
+#        width = 14, 
+#        height = 8, 
+#        dpi = 300)
+
+```
+
+
+```{r}
+
+league.out <- nma.league(
+  nma_results_fixed,  
+  central.tdcy = "median",
+  log.scale = FALSE,          # FALSE для RR на натуральной шкале
+  low.colour = "springgreen4", # цвет для низких значений (лучшие)
+  mid.colour = "white",        # цвет для средних значений
+  high.colour = "red",         # цвет для высоких значений (худшие)
+  digits = 2                   # число знаков после запятой
+)
+league.out$heatplot
+
+# ggsave(paste0("league_table_heatmap_fixed_",version,".png"), , 
+#        plot = league.out$heatplot,
+#        width = 14, 
+#        height = 8, 
+#        dpi = 300)
+
+```
