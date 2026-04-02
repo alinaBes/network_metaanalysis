@@ -260,7 +260,7 @@ nma_model_fixed_max  <- model_template(network_data_max, "fixed")
 # Running model
 run_template <- \(model){
   nma.run(
-    model,
+    # model,
     n.burnin = 5000,
     n.iter = 20000,
     thin = 1
