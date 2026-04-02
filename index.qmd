@@ -18,7 +18,8 @@ set.seed(12345)
 gs4_deauth()
 data_raw <- read_sheet('14aXdaoIlexEhEPIVylDPF3HLr28ChyRIYGMEqWnDI0A',
            sheet = 'Sheet2',col_types = "c",skip = 1) |> 
-  mutate(across(contains('n_'), as.numeric))
+  mutate(across(contains('n_'), as.numeric)) |> 
+  filter(analyzed_population == 'Per-Protocol' | (study == 'Dellinger 2018' & analyzed_population == '> 9 MODS primary analyses'))
 
 ```
 
@@ -50,8 +51,7 @@ data_raw |>
   ) |> 
   rowwise() |> 
   mutate(n_endpoints = sum(c_across(starts_with("n_events")))) |> 
-  ungroup() |> 
-  filter(n_endpoints > 1) |> select(study, n_endpoints)
+  ungroup() |>  select(study, n_endpoints)
 
 ```
 
@@ -59,60 +59,55 @@ data_raw |>
 #| label: time-choice
 #| warning: false
 
+event_cols <- grep('n_events', colnames(data_raw), value = T)
+
 study_endpoints <- data_raw |> 
   group_by(study) |> 
   summarise(
-    across(starts_with("n_events"), ~ first(na.omit(.))),
+    across(event_cols, ~ first(.)),
     .groups = "drop"
-  ) |> 
+  ) |>  
+     rowwise() |> 
   mutate(
-    n_events_selected = coalesce(
-      `n_events_28-30`,
-      n_events_60,
-      n_events_90,
-      n_events_ICU,
-      n_events_hospt,
-      n_events_last
-    ),
-    endpoint_used_28 = case_when(
-      !is.na(`n_events_28-30`) ~ "28-30",
-      !is.na(n_events_60)    ~ "60",
-      !is.na(n_events_90)    ~ "90",
-      !is.na(n_events_ICU)   ~ "ICU",
-      !is.na(n_events_hospt)   ~ "hospt",
-      !is.na(n_events_last) ~ "last",
-      TRUE ~ NA_character_
-    ),
-    endpoint_used_max = case_when(
-      !is.na(n_events_hospt)   ~ "hospt",
-      !is.na(n_events_ICU)   ~ "ICU",
-      !is.na(n_events_last) ~ "last",
-      !is.na(n_events_90)    ~ "90",
-      !is.na(n_events_60)    ~ "60",
-      !is.na(`n_events_28-30`) ~ "28-30",
-      TRUE ~ NA_character_
-    )
-  ) |> select(study, endpoint_used_28, endpoint_used_max)
-
+    nearest_28_name = if (!is.na(`n_events_28-30`)) {
+      "28-30"
+    } else {
+      # which.min возвращает индекс минимального значения в векторе 
+      col_index <- which.min(c_across(all_of(event_cols)))
+      sub("n_events_", "", event_cols[col_index])
+    },
+    
+    nearest_hospt_name = if (!is.na(n_events_hospt)) {
+      "hospt"
+    } else {
+      col_index <- which.max(c_across(all_of(event_cols)))
+      sub("n_events_", "", event_cols[col_index])
+    },
+  ) |> 
+  ungroup() |> select(study, contains('nearest'))
 
 data_with_endpoints <- left_join(data_raw,study_endpoints, by = 'study')
+
+
 
 date_28 <- data_with_endpoints |> 
   rowwise() |> 
   mutate(
-    events  = get(paste0("n_events_", endpoint_used_28)),
-    at_risk = get(paste0("n_at_risk_", endpoint_used_28))
+    nearest_28_events = get(paste0("n_events_", nearest_28_name)),
+    nearest_28_at_risk = get(paste0("n_at_risk_", nearest_28_name))
   ) |> 
-  ungroup() |> select(study, group_code, n_events = events, n_patients = at_risk)
+  ungroup() |> 
+  select(study, group_code, n_events = nearest_28_events, n_patients = nearest_28_at_risk)
 
 
 max_date <- data_with_endpoints |> 
   rowwise() |> 
   mutate(
-    events  = get(paste0("n_events_", endpoint_used_max)),
-    at_risk = get(paste0("n_at_risk_", endpoint_used_max))
+    nearest_hospt_events = get(paste0("n_events_", nearest_hospt_name)),
+    nearest_hospt_at_risk = get(paste0("n_at_risk_", nearest_hospt_name))
   ) |> 
-  ungroup() |>  select(study, group_code, n_events = events, n_patients = at_risk)
+  ungroup() |> 
+  select(study, group_code, n_events = nearest_hospt_events, n_patients = nearest_hospt_at_risk)
 
 
 ```
@@ -181,9 +176,12 @@ plot_network <- \(network, title){
   )
 }
 
+# петлями обозначены сравнения исследований с более чем 2 группами
 plot_network(network_data_max, "Max follow-up")
-plot_network(network_data_28, "28 days")
+```
 
+```{r}
+plot_network(network_data_28, "28 days")
 ```
 
 

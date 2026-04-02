@@ -171,7 +171,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">gs4_deauth</span>()</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>data_raw <span class="ot">&lt;-</span> <span class="fu">read_sheet</span>(<span class="st">'14aXdaoIlexEhEPIVylDPF3HLr28ChyRIYGMEqWnDI0A'</span>,</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">sheet =</span> <span class="st">'Sheet2'</span>,<span class="at">col_types =</span> <span class="st">"c"</span>,<span class="at">skip =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">contains</span>(<span class="st">'n_'</span>), as.numeric))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">contains</span>(<span class="st">'n_'</span>), as.numeric)) <span class="sc">|&gt;</span> </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(analyzed_population <span class="sc">==</span> <span class="st">'Per-Protocol'</span> <span class="sc">|</span> (study <span class="sc">==</span> <span class="st">'Dellinger 2018'</span> <span class="sc">&amp;</span> analyzed_population <span class="sc">==</span> <span class="st">'&gt; 9 MODS primary analyses'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data_raw <span class="sc">|&gt;</span> <span class="fu">select</span>(study,group_code, <span class="fu">contains</span>(<span class="st">'events'</span>)) <span class="sc">|&gt;</span> </span>
@@ -185,14 +186,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 2
-  endpoint       n_studies
-  &lt;chr&gt;              &lt;int&gt;
-1 n_events_28-30        26
-2 n_events_60            7
-3 n_events_90            8
-4 n_events_ICU           5
-5 n_events_hospt         4
-6 n_events_last          5</code></pre>
+  endpoint             n_studies
+  &lt;chr&gt;                    &lt;int&gt;
+1 n_events_28-30              26
+2 n_events_60                  7
+3 n_events_90                  8
+4 n_events_ICU                 5
+5 n_events_hospt               4
+6 n_events_unspecified         5</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -203,83 +204,74 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span> </span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n_endpoints =</span> <span class="fu">sum</span>(<span class="fu">c_across</span>(<span class="fu">starts_with</span>(<span class="st">"n_events"</span>)))) <span class="sc">|&gt;</span> </span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n_endpoints <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(study, n_endpoints)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span>  <span class="fu">select</span>(study, n_endpoints)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 14 × 2
+<pre><code># A tibble: 31 × 2
    study                n_endpoints
    &lt;chr&gt;                      &lt;int&gt;
  1 Boussekey 2008                 2
- 2 Cruz 2009                      2
- 3 Dellinger 2018                 3
- 4 Gimenez-Esparza 2019           2
- 5 Huang 2010                     3
- 6 Joannes-Boyau 2013             3
- 7 Livigni 2014                   4
- 8 Park 2016                      3
- 9 Payen 2015                     3
-10 Quenot 2015                    3
-11 Rey 2023                       2
-12 Schadler 2017                  2
-13 Shum 2014                      2
-14 Zhang 2012                     4</code></pre>
+ 2 Busund 2001                    1
+ 3 Chu 2020                       1
+ 4 Coudroy 2017                   1
+ 5 Cruz 2009                      2
+ 6 Dellinger 2018                 3
+ 7 Gimenez-Esparza 2019           2
+ 8 Hassan 2013                    1
+ 9 Hawchar 2019                   1
+10 Huang 2010                     3
+# ℹ 21 more rows</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>study_endpoints <span class="ot">&lt;-</span> data_raw <span class="sc">|&gt;</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(study) <span class="sc">|&gt;</span> </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(<span class="fu">starts_with</span>(<span class="st">"n_events"</span>), <span class="sc">~</span> <span class="fu">first</span>(<span class="fu">na.omit</span>(.))),</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_events_selected =</span> <span class="fu">coalesce</span>(</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">n_events_28-30</span><span class="st">`</span>,</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>      n_events_60,</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>      n_events_90,</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      n_events_ICU,</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      n_events_hospt,</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      n_events_last</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">endpoint_used_28 =</span> <span class="fu">case_when</span>(</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(<span class="st">`</span><span class="at">n_events_28-30</span><span class="st">`</span>) <span class="sc">~</span> <span class="st">"28-30"</span>,</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_60)    <span class="sc">~</span> <span class="st">"60"</span>,</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_90)    <span class="sc">~</span> <span class="st">"90"</span>,</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_ICU)   <span class="sc">~</span> <span class="st">"ICU"</span>,</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_hospt)   <span class="sc">~</span> <span class="st">"hospt"</span>,</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_last) <span class="sc">~</span> <span class="st">"last"</span>,</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">endpoint_used_max =</span> <span class="fu">case_when</span>(</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_hospt)   <span class="sc">~</span> <span class="st">"hospt"</span>,</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_ICU)   <span class="sc">~</span> <span class="st">"ICU"</span>,</span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_last) <span class="sc">~</span> <span class="st">"last"</span>,</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_90)    <span class="sc">~</span> <span class="st">"90"</span>,</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(n_events_60)    <span class="sc">~</span> <span class="st">"60"</span>,</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(<span class="st">`</span><span class="at">n_events_28-30</span><span class="st">`</span>) <span class="sc">~</span> <span class="st">"28-30"</span>,</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span></span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> <span class="fu">select</span>(study, endpoint_used_28, endpoint_used_max)</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>data_with_endpoints <span class="ot">&lt;-</span> <span class="fu">left_join</span>(data_raw,study_endpoints, <span class="at">by =</span> <span class="st">'study'</span>)</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>date_28 <span class="ot">&lt;-</span> data_with_endpoints <span class="sc">|&gt;</span> </span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">events  =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_events_"</span>, endpoint_used_28)),</span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">at_risk =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_at_risk_"</span>, endpoint_used_28))</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> <span class="fu">select</span>(study, group_code, <span class="at">n_events =</span> events, <span class="at">n_patients =</span> at_risk)</span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>max_date <span class="ot">&lt;-</span> data_with_endpoints <span class="sc">|&gt;</span> </span>
-<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">events  =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_events_"</span>, endpoint_used_max)),</span>
-<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">at_risk =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_at_risk_"</span>, endpoint_used_max))</span>
-<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span>  <span class="fu">select</span>(study, group_code, <span class="at">n_events =</span> events, <span class="at">n_patients =</span> at_risk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>event_cols <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">'n_events'</span>, <span class="fu">colnames</span>(data_raw), <span class="at">value =</span> T)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>study_endpoints <span class="ot">&lt;-</span> data_raw <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(study) <span class="sc">|&gt;</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(event_cols, <span class="sc">~</span> <span class="fu">first</span>(.)),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span>  </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>     <span class="fu">rowwise</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">nearest_28_name =</span> <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(<span class="st">`</span><span class="at">n_events_28-30</span><span class="st">`</span>)) {</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>      <span class="st">"28-30"</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      <span class="co"># which.min возвращает индекс минимального значения в векторе </span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      col_index <span class="ot">&lt;-</span> <span class="fu">which.min</span>(<span class="fu">c_across</span>(<span class="fu">all_of</span>(event_cols)))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sub</span>(<span class="st">"n_events_"</span>, <span class="st">""</span>, event_cols[col_index])</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">nearest_hospt_name =</span> <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(n_events_hospt)) {</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>      <span class="st">"hospt"</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>      col_index <span class="ot">&lt;-</span> <span class="fu">which.max</span>(<span class="fu">c_across</span>(<span class="fu">all_of</span>(event_cols)))</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sub</span>(<span class="st">"n_events_"</span>, <span class="st">""</span>, event_cols[col_index])</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> <span class="fu">select</span>(study, <span class="fu">contains</span>(<span class="st">'nearest'</span>))</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>data_with_endpoints <span class="ot">&lt;-</span> <span class="fu">left_join</span>(data_raw,study_endpoints, <span class="at">by =</span> <span class="st">'study'</span>)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>date_28 <span class="ot">&lt;-</span> data_with_endpoints <span class="sc">|&gt;</span> </span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">nearest_28_events =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_events_"</span>, nearest_28_name)),</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">nearest_28_at_risk =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_at_risk_"</span>, nearest_28_name))</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(study, group_code, <span class="at">n_events =</span> nearest_28_events, <span class="at">n_patients =</span> nearest_28_at_risk)</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>max_date <span class="ot">&lt;-</span> data_with_endpoints <span class="sc">|&gt;</span> </span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">nearest_hospt_events =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_events_"</span>, nearest_hospt_name)),</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">nearest_hospt_at_risk =</span> <span class="fu">get</span>(<span class="fu">paste0</span>(<span class="st">"n_at_risk_"</span>, nearest_hospt_name))</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(study, group_code, <span class="at">n_events =</span> nearest_hospt_events, <span class="at">n_patients =</span> nearest_hospt_at_risk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>prep_template <span class="ot">&lt;-</span> \(df){</span>
@@ -325,16 +317,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_network</span>(network_data_max, <span class="st">"Max follow-up"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># петлями обозначены сравнения исследований с более чем 2 группами</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_network</span>(network_data_max, <span class="st">"Max follow-up"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>## Max follow-up </code></pre>
 </div>
 <div class="cell-output-display">
 <p><img src="index_files/figure-html/network-plot-view-1.png" class="img-fluid" width="672"></p>
 </div>
+</div>
+<div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_network</span>(network_data_28, <span class="st">"28 days"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>## 28 days </code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="cell">
@@ -359,13 +357,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    &lt;chr&gt;                                                 &lt;chr&gt;
  1 Number of Interventions                               17   
  2 Number of Studies                                     31   
- 3 Total Number of Patients in Network                   3527 
+ 3 Total Number of Patients in Network                   2703 
  4 Total Possible Pairwise Comparisons                   136  
- 5 Total Number of Pairwise Comparisons With Direct Data 20   
+ 5 Total Number of Pairwise Comparisons With Direct Data 18   
  6 Is the network connected?                             TRUE 
- 7 Number of Two-arm Studies                             29   
- 8 Number of Multi-Arms Studies                          2    
- 9 Total Number of Events in Network                     1425 
+ 7 Number of Two-arm Studies                             30   
+ 8 Number of Multi-Arms Studies                          1    
+ 9 Total Number of Events in Network                     1154 
 10 Number of Studies With  No Zero Events                30   
 11 Number of Studies With At Least One Zero Event        1    
 12 Number of Studies with All Zero Events                0    </code></pre>
@@ -387,15 +385,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 10 IHSA                 1       19         67       0.284       0.284     0.284 
 11 OXIRIS               1        3         10       0.3         0.3       0.3   
 12 PE                   3       34         88       0.333       0.571     0.386 
-13 PMX                 11      316        898       0.2         0.586     0.352 
+13 PMX                  9      182        502       0.2         0.586     0.363 
 14 PMX + SVCVVH         1        6         24       0.25        0.25      0.25  
-15 ST                  25      495       1375       0.18        0.9       0.36  
+15 ST                  23      358        947       0.18        0.9       0.378 
 16 SVCVVH               7      102        189       0.4         0.833     0.540 
 17 VHVCVVH              5      184        350       0.207       0.657     0.526 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(network_char_max<span class="sc">$</span>comparison)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 20 × 5
+<pre><code># A tibble: 18 × 5
    comparison               n.studies n.patients n.outcomes proportion
    &lt;chr&gt;                        &lt;int&gt;      &lt;int&gt;      &lt;int&gt;      &lt;dbl&gt;
  1 ALT vs. ST                       2         30          5      0.167
@@ -412,12 +410,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 12 OXIRIS vs. ST                    1         20          5      0.25 
 13 PE vs. ST                        3        176         82      0.466
 14 PMX + SVCVVH vs. SVCVVH          1         48         24      0.5  
-15 PMX vs. PMX                     27       9756       3582      0.367
-16 PMX vs. ST                      89      30869      11051      0.358
-17 ST vs. ST                       27      10368       3636      0.351
-18 ST vs. SVCVVH                    1         76         37      0.487
-19 ST vs. VHVCVVH                   1         60         16      0.267
-20 SVCVVH vs. VHVCVVH               2        156         62      0.397</code></pre>
+15 PMX vs. ST                       9        977        354      0.362
+16 ST vs. SVCVVH                    1         76         37      0.487
+17 ST vs. VHVCVVH                   1         60         16      0.267
+18 SVCVVH vs. VHVCVVH               2        156         62      0.397</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -428,13 +424,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    &lt;chr&gt;                                                 &lt;chr&gt;
  1 Number of Interventions                               17   
  2 Number of Studies                                     31   
- 3 Total Number of Patients in Network                   3527 
+ 3 Total Number of Patients in Network                   2703 
  4 Total Possible Pairwise Comparisons                   136  
- 5 Total Number of Pairwise Comparisons With Direct Data 20   
+ 5 Total Number of Pairwise Comparisons With Direct Data 18   
  6 Is the network connected?                             TRUE 
- 7 Number of Two-arm Studies                             29   
- 8 Number of Multi-Arms Studies                          2    
- 9 Total Number of Events in Network                     1425 
+ 7 Number of Two-arm Studies                             30   
+ 8 Number of Multi-Arms Studies                          1    
+ 9 Total Number of Events in Network                     1154 
 10 Number of Studies With  No Zero Events                30   
 11 Number of Studies With At Least One Zero Event        1    
 12 Number of Studies with All Zero Events                0    </code></pre>
@@ -456,15 +452,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 10 IHSA                 1       19         67       0.284       0.284     0.284 
 11 OXIRIS               1        3         10       0.3         0.3       0.3   
 12 PE                   3       34         88       0.333       0.571     0.386 
-13 PMX                 11      316        898       0.2         0.586     0.352 
+13 PMX                  9      182        502       0.2         0.586     0.363 
 14 PMX + SVCVVH         1        6         24       0.25        0.25      0.25  
-15 ST                  25      495       1375       0.18        0.9       0.36  
+15 ST                  23      358        947       0.18        0.9       0.378 
 16 SVCVVH               7      102        189       0.4         0.833     0.540 
 17 VHVCVVH              5      184        350       0.207       0.657     0.526 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(network_char_28<span class="sc">$</span>comparison)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 20 × 5
+<pre><code># A tibble: 18 × 5
    comparison               n.studies n.patients n.outcomes proportion
    &lt;chr&gt;                        &lt;int&gt;      &lt;int&gt;      &lt;int&gt;      &lt;dbl&gt;
  1 ALT vs. ST                       2         30          5      0.167
@@ -481,12 +477,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 12 OXIRIS vs. ST                    1         20          5      0.25 
 13 PE vs. ST                        3        176         82      0.466
 14 PMX + SVCVVH vs. SVCVVH          1         48         24      0.5  
-15 PMX vs. PMX                     27       9756       3582      0.367
-16 PMX vs. ST                      89      30869      11051      0.358
-17 ST vs. ST                       27      10368       3636      0.351
-18 ST vs. SVCVVH                    1         76         37      0.487
-19 ST vs. VHVCVVH                   1         60         16      0.267
-20 SVCVVH vs. VHVCVVH               2        156         62      0.397</code></pre>
+15 PMX vs. ST                       9        977        354      0.362
+16 ST vs. SVCVVH                    1         76         37      0.487
+17 ST vs. VHVCVVH                   1         60         16      0.267
+18 SVCVVH vs. VHVCVVH               2        156         62      0.397</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -534,9 +528,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    Resolving undeclared variables
    Allocating nodes
 Graph information:
-   Observed stochastic nodes: 67
-   Unobserved stochastic nodes: 84
-   Total graph size: 1494
+   Observed stochastic nodes: 63
+   Unobserved stochastic nodes: 80
+   Total graph size: 1381
 
 Initializing model</code></pre>
 </div>
@@ -546,9 +540,9 @@ Initializing model</code></pre>
    Resolving undeclared variables
    Allocating nodes
 Graph information:
-   Observed stochastic nodes: 67
+   Observed stochastic nodes: 63
    Unobserved stochastic nodes: 47
-   Total graph size: 1360
+   Total graph size: 1296
 
 Initializing model</code></pre>
 </div>
@@ -558,9 +552,9 @@ Initializing model</code></pre>
    Resolving undeclared variables
    Allocating nodes
 Graph information:
-   Observed stochastic nodes: 67
-   Unobserved stochastic nodes: 84
-   Total graph size: 1494
+   Observed stochastic nodes: 63
+   Unobserved stochastic nodes: 80
+   Total graph size: 1381
 
 Initializing model</code></pre>
 </div>
@@ -570,9 +564,9 @@ Initializing model</code></pre>
    Resolving undeclared variables
    Allocating nodes
 Graph information:
-   Observed stochastic nodes: 67
+   Observed stochastic nodes: 63
    Unobserved stochastic nodes: 47
-   Total graph size: 1360
+   Total graph size: 1296
 
 Initializing model</code></pre>
 </div>
